@@ -1,4 +1,3 @@
 .venv
-*.pdf
 *.py[cod]
 .DS_Store
