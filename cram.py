@@ -1,3 +1,6 @@
+import heapq
+import random
+
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
@@ -8,7 +11,8 @@ class PDF:
     def __init__(self, name, pagesize=letter):
         self.font = 'Helvetica'
         self.face = getFont(self.font).face
-        self.size = 24
+        self.size = 6
+        self.fontHeight = self.getTextHeight(' ')
 
         self.canvasWidth, self.canvasHeight = pagesize
         self.spaceWidth = self.getTextWidth(' ')
@@ -18,15 +22,27 @@ class PDF:
         self.c.setFillColor(colors.black)
 
     def drawText(self, text, x, y):
-        width, height = self.getTextSize(text)
-        self.c.drawString(x, self.canvasHeight - height - y, text)
-        return width, height
+        width = self.getTextWidth(text)
+        self.c.drawString(x, self.canvasHeight - self.fontHeight - y, text)
+        return width, self.fontHeight
+
+    def generate_random_word(self):
+        with open('words.txt') as f:
+            return heapq.nlargest(1, f, key=lambda x: random.random())[0].lower().strip()
+
+    def fillPage(self):
+        for wordY in range(0, int(self.canvasHeight), int(self.fontHeight)):
+            wordX = 0
+            while True:
+                word = self.generate_random_word()
+                width = self.getTextWidth(word)
+                self.drawText(word, wordX, wordY)
+                wordX += width + self.spaceWidth
+                if wordX > self.canvasWidth:
+                    break
 
     def save(self):
         self.c.save()
-
-    def getTextSize(self, text):
-        return self.getTextWidth(text), self.getTextHeight(text)
 
     def getTextWidth(self, text):
         return stringWidth(text, self.font, self.size)
@@ -37,8 +53,5 @@ class PDF:
 
 if __name__ == '__main__':
     pdf = PDF('cram.pdf')
-    pdf.drawText('Test', 0, 0)
-    pdf.drawText('Hello World', 0, 22)
-    width, _ = pdf.drawText('Hello', 0, 44)
-    pdf.drawText('World', width + pdf.spaceWidth, 44)
+    pdf.fillPage()
     pdf.save()
